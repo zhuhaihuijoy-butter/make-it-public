@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="给代码小白的 HTML 发布指南：用 Netlify、GitHub Pages 或 Vercel，把本地网页变成人人可访问的网址。">
+  <title>小白友好｜如何发布自己的 HTML 到互联网上</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fira+Code:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,600&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --_waiwai-ds: "waiwai-v1";
+      --background: #FAFAFA; --primary: #FFD5D0; --accent: #FCE9A6;
+      --heading: #2B2B2B; --text: #666666; --link: #E98B8B;
+      --cta: #FFB7B0; --border: #F3DAD6; --soft: #FFF7F5;
+      --soft-deep: #FFF1EE; --muted: #858585;
+      --font-title: "Huiwen Mincho", "汇文明朝体", "Noto Serif SC", "Songti SC", serif;
+      --font-body: "Smiley Sans", "得意黑", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-accent: "Fraunces", Georgia, serif;
+      --font-hand: "Caveat", cursive;
+      --font-code: "Fira Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      overflow-x: hidden; background: var(--background); color: var(--text);
+      font: 16px/1.72 var(--font-body); -webkit-font-smoothing: antialiased;
+    }
+    button, a { font: inherit; }
+    a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: .25em; }
+    a:hover { background: rgba(255,213,208,.38); }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 4px; }
+    ::selection { background: var(--accent); color: var(--heading); }
+    .shell { width: min(100% - clamp(32px, 6vw, 96px), 1280px); margin-inline: auto; }
+    .section { position: relative; padding: clamp(88px, 12vh, 150px) 0; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: .65rem; color: var(--muted);
+      font: 500 .73rem/1 var(--font-body); letter-spacing: .16em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 2.2rem; height: 2px; background: var(--primary); }
+    h1, h2, h3 { color: var(--heading); font-family: var(--font-title); font-weight: 900; text-wrap: balance; }
+    h1 { font-size: clamp(3rem, 7.5vw, 6.6rem); line-height: .98; letter-spacing: -.045em; }
+    h2 { font-size: clamp(2rem, 4.7vw, 4.2rem); line-height: 1.12; letter-spacing: -.035em; }
+    h3 { font-size: clamp(1.12rem, 2vw, 1.42rem); line-height: 1.35; }
+    .lead { font-size: clamp(1.02rem, 1.5vw, 1.2rem); max-width: 44rem; }
+    .marker { background: linear-gradient(180deg, transparent 58%, rgba(252,233,166,.72) 58%); padding-inline: .06em; }
+    .tiny-note { color: var(--link); font: 700 clamp(1.1rem, 2vw, 1.55rem)/1 var(--font-hand); }
+    .code { font-family: var(--font-code); }
+
+    .progress { position: fixed; inset: 0 0 auto; height: 4px; z-index: 20; background: rgba(243,218,214,.45); }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--cta); transform-origin: left; }
+    .corner-mark {
+      position: fixed; z-index: 10; right: clamp(14px, 2vw, 30px); bottom: clamp(14px, 2vw, 30px);
+      display: flex; align-items: center; gap: .55rem; padding: .68rem 1rem; border: 1px solid var(--border);
+      border-radius: 999px; background: rgba(250,250,250,.92); color: var(--heading);
+      font-size: .76rem; box-shadow: 0 8px 32px rgba(43,43,43,.06); backdrop-filter: blur(8px);
+    }
+    .corner-mark b { color: var(--link); }
+
+    /* Hero：不对称双栏 */
+    .hero { min-height: 100svh; display: grid; grid-template-columns: 1.12fr .72fr; align-items: center; gap: clamp(40px, 7vw, 110px); padding-block: clamp(90px, 12vh, 140px); }
+    .hero-copy { position: relative; z-index: 2; }
+    .hero-copy .eyebrow { margin-bottom: clamp(24px, 4vw, 48px); }
+    .hero-copy .lead { margin-top: clamp(28px, 4vw, 44px); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2rem; }
+    .pill { display: inline-flex; align-items: center; gap: .45rem; padding: .56rem .85rem; border: 1px solid var(--border); border-radius: 999px; color: var(--heading); background: var(--soft); font-size: .8rem; }
+    .browser-wrap { position: relative; min-width: 0; }
+    .orbit { position: absolute; width: 130%; aspect-ratio: 1; border: 2px dashed rgba(233,139,139,.26); border-radius: 50%; inset: 50% auto auto 50%; transform: translate(-50%,-50%); }
+    .browser {
+      position: relative; z-index: 1; overflow: hidden; background: var(--soft); border: 1px solid var(--border);
+      border-radius: 24px; box-shadow: 0 24px 70px rgba(43,43,43,.10); transform: translateX(4vw);
+    }
+    .browser-bar { height: 54px; display: flex; align-items: center; gap: 8px; padding: 0 18px; background: var(--primary); border-bottom: 1px solid rgba(43,43,43,.05); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--background); }
+    .address { margin-left: 8px; flex: 1; padding: .48rem .8rem; border-radius: 999px; background: rgba(250,250,250,.76); color: var(--heading); font: 500 clamp(.62rem, 1vw, .75rem)/1 var(--font-code); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .browser-page { min-height: clamp(320px, 42vw, 520px); padding: clamp(28px, 4vw, 54px); display: flex; flex-direction: column; justify-content: space-between; background: radial-gradient(circle at 85% 15%, rgba(252,233,166,.56), transparent 28%), var(--soft); }
+    .browser-page strong { color: var(--heading); font: 900 clamp(2rem, 4vw, 4rem)/1.05 var(--font-title); }
+    .browser-page small { color: var(--muted); font-size: .78rem; }
+    .browser-button { align-self: flex-start; padding: .72rem 1rem; background: var(--cta); color: var(--heading); border-radius: 10px; font-weight: 700; }
+    .floating-label { position: absolute; z-index: 3; left: -2rem; bottom: 12%; padding: .7rem 1rem; border-radius: 999px; color: var(--heading); background: var(--accent); box-shadow: 0 10px 30px rgba(43,43,43,.08); font: 600 .78rem/1 var(--font-code); }
+
+    /* Pain：对称双栏 */
+    .pain { display: grid; grid-template-columns: .86fr 1.14fr; min-height: 78vh; border-block: 1px solid var(--border); }
+    .pain-title { display: flex; flex-direction: column; justify-content: space-between; padding: clamp(48px, 8vw, 110px); background: var(--primary); }
+    .pain-title .giant { color: rgba(43,43,43,.09); font: italic 600 clamp(6rem, 16vw, 13rem)/.75 var(--font-accent); }
+    .pain-copy { display: grid; align-content: center; gap: clamp(24px, 4vw, 44px); padding: clamp(48px, 8vw, 110px); background: var(--background); }
+    .pain-item { display: grid; grid-template-columns: auto 1fr; gap: 1.2rem; align-items: start; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .pain-item:last-child { border-bottom: 0; }
+    .pain-icon { display: grid; place-items: center; width: 42px; aspect-ratio: 1; border-radius: 50%; background: var(--accent); color: var(--heading); font-weight: 900; }
+    .pain-item p { margin-top: .45rem; }
+
+    /* 概念：Sticky词典 */
+    .dictionary { display: grid; grid-template-columns: .48fr 1fr; gap: clamp(40px, 9vw, 130px); }
+    .dictionary-head { position: sticky; top: 12vh; align-self: start; }
+    .dictionary-head h2 { margin-top: 1.1rem; }
+    .dictionary-head .tiny-note { display: block; margin-top: 1.5rem; }
+    .term-stack { display: grid; gap: clamp(30px, 5vw, 64px); }
+    .term { position: relative; padding: clamp(30px, 5vw, 58px); background: var(--soft); border-bottom: 5px solid var(--primary); }
+    .term:nth-child(2) { background: var(--soft-deep); border-bottom-color: var(--accent); }
+    .term-no { position: absolute; right: 1.5rem; top: 1rem; color: rgba(43,43,43,.10); font: italic 600 clamp(3.4rem, 7vw, 6rem)/1 var(--font-accent); }
+    .term .en { color: var(--link); font: italic 500 1rem/1 var(--font-accent); }
+    .term h3 { margin: .55rem 0 1.1rem; font-size: clamp(1.7rem, 3vw, 2.6rem); }
+    .analogy { display: inline-flex; gap: .55rem; margin-top: 1.4rem; padding: .62rem .85rem; border-radius: 8px; color: var(--heading); background: var(--accent); font-size: .86rem; }
+
+    /* 域名：Editorial strip */
+    .domains { background: var(--soft); overflow: hidden; }
+    .domains-head { display: grid; grid-template-columns: 1fr .68fr; gap: 3rem; align-items: end; }
+    .domains-head .lead { justify-self: end; }
+    .domain-ticker { display: flex; width: max-content; gap: 1rem; margin-block: clamp(45px, 7vw, 80px); animation: ticker 24s linear infinite; }
+    .domain-ticker span { padding: .55rem 1.05rem; border-radius: 999px; background: var(--background); border: 1px solid var(--border); color: var(--heading); font: 500 clamp(.82rem, 1.3vw, 1rem)/1 var(--font-code); }
+    @keyframes ticker { to { transform: translateX(-50%); } }
+    .domain-groups { display: grid; grid-template-columns: 1.15fr .85fr 1fr; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+    .domain-group { min-height: 250px; padding: clamp(28px, 4vw, 48px); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--background); }
+    .domain-group:nth-child(2) { background: var(--primary); }
+    .domain-group:nth-child(5) { background: var(--accent); }
+    .domain-group .index { color: var(--link); font: italic 600 1rem/1 var(--font-accent); }
+    .domain-group h3 { margin: .8rem 0 1.2rem; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .tag { padding: .38rem .58rem; border: 1px solid rgba(43,43,43,.12); border-radius: 7px; color: var(--heading); font: 500 .75rem/1 var(--font-code); background: rgba(250,250,250,.55); }
+    .domain-advice { display: grid; grid-template-columns: auto 1fr; gap: clamp(20px, 4vw, 45px); align-items: center; margin-top: 3rem; padding: clamp(26px, 4vw, 46px); background: var(--heading); color: #FAFAFA; }
+    .domain-advice .rank { color: var(--primary); font: italic 600 clamp(1.6rem, 4vw, 3.2rem)/1.2 var(--font-accent); white-space: nowrap; }
+
+    /* 比较：自定义数据条，非 table */
+    .compare-head { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: clamp(42px, 7vw, 80px); }
+    .compare-grid { border-top: 1px solid var(--heading); }
+    .compare-row { display: grid; grid-template-columns: 1.2fr .55fr 1.3fr 1.3fr; align-items: center; gap: 1.4rem; padding: clamp(20px, 3vw, 32px) 0; border-bottom: 1px solid var(--border); }
+    .compare-row.header { padding-block: .85rem; color: var(--muted); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; }
+    .compare-row strong { color: var(--heading); font-size: 1.08rem; }
+    .stars { color: var(--link); letter-spacing: .1em; }
+    .recommend { display: inline-block; width: fit-content; padding: .28rem .52rem; border-radius: 6px; background: var(--accent); color: var(--heading); font-size: .72rem; }
+
+    /* 三种方法：Tab + step flow */
+    .methods { background: var(--primary); }
+    .method-layout { display: grid; grid-template-columns: .42fr 1fr; gap: clamp(36px, 7vw, 100px); }
+    .method-nav { align-self: start; position: sticky; top: 12vh; }
+    .method-nav h2 { margin: 1rem 0 2rem; }
+    .tabs { display: grid; gap: .7rem; }
+    .tab { border: 0; text-align: left; cursor: pointer; padding: 1rem 1.15rem; border-radius: 10px; color: var(--heading); background: rgba(250,250,250,.55); transition: transform .3s cubic-bezier(.16,1,.3,1), background .3s; }
+    .tab:hover { transform: translateX(5px); }
+    .tab[aria-selected="true"] { background: var(--background); font-weight: 700; }
+    .method-panel { display: none; padding: clamp(30px, 5vw, 62px); background: var(--background); min-height: 610px; }
+    .method-panel.active { display: block; }
+    .method-top { display: flex; justify-content: space-between; gap: 1rem; align-items: start; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .method-top .method-id { color: rgba(43,43,43,.12); font: italic 600 clamp(3.5rem, 8vw, 7rem)/.75 var(--font-accent); }
+    .method-panel h3 { font-size: clamp(1.8rem, 4vw, 3.2rem); }
+    .url-link { display: inline-block; margin-top: .8rem; font: 500 .78rem/1.4 var(--font-code); }
+    .steps { margin-top: 2rem; display: grid; gap: 0; counter-reset: step; }
+    .step { position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 1rem; min-height: 88px; }
+    .step::before { counter-increment: step; content: counter(step, decimal-leading-zero); display: grid; place-items: center; align-self: start; width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: var(--heading); font: 600 .72rem/1 var(--font-code); }
+    .step:not(:last-child)::after { content: ""; position: absolute; left: 20px; top: 47px; bottom: 5px; border-left: 1px dashed var(--link); }
+    .step b { color: var(--heading); }
+    .step p { font-size: .92rem; }
+    .benefit { margin-top: 1.5rem; padding: 1rem 1.15rem; border-radius: 10px; background: var(--soft-deep); color: var(--heading); }
+    .example-url { margin-top: .8rem; overflow-wrap: anywhere; color: var(--link); font: 500 .74rem/1.5 var(--font-code); }
+
+    /* 决策：深色全宽 */
+    .decision { background: var(--heading); color: #FAFAFA; overflow: hidden; }
+    .decision::after { content: "CHOOSE"; position: absolute; right: -2vw; bottom: -5vw; color: rgba(255,213,208,.07); font: italic 600 clamp(7rem, 20vw, 18rem)/1 var(--font-accent); }
+    .decision h2 { color: #FAFAFA; max-width: 850px; }
+    .decision .eyebrow { color: var(--primary); margin-bottom: 1rem; }
+    .decision-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: clamp(45px, 8vw, 90px); background: rgba(255,255,255,.12); }
+    .choice { padding: clamp(26px, 4vw, 48px); background: var(--heading); }
+    .choice .when { color: var(--primary); font: italic 600 1rem/1 var(--font-accent); }
+    .choice h3 { color: #FAFAFA; margin: .75rem 0 1rem; }
+    .choice p { color: #cfcfcf; }
+    .choice.best { background: var(--primary); }
+    .choice.best h3, .choice.best p, .choice.best .when { color: var(--heading); }
+
+    /* Finale */
+    .finale { min-height: 80vh; display: grid; place-items: center; text-align: center; background: radial-gradient(circle at 50% 45%, rgba(252,233,166,.48), transparent 28%), var(--background); }
+    .finale-inner { width: min(820px, 100%); }
+    .finale .eyebrow { margin-bottom: 1.5rem; }
+    .finale h2 { font-size: clamp(2.5rem, 6vw, 5.7rem); }
+    .finale p { max-width: 580px; margin: 1.6rem auto 0; }
+    .cta { display: inline-flex; align-items: center; gap: .7rem; margin-top: 2rem; padding: .9rem 1.25rem; border: 0; border-radius: 10px; background: var(--cta); color: var(--heading); font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(233,139,139,.14); }
+    .cta:hover { background: var(--primary); }
+    footer { padding: 2.2rem 0; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
+    footer .shell { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+    .reveal.visible { opacity: 1; transform: none; }
+    .d1 { transition-delay: .1s; } .d2 { transition-delay: .2s; } .d3 { transition-delay: .3s; }
+
+    @media (max-width: 900px) {
+      .hero, .pain, .dictionary, .domains-head, .method-layout { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .browser { transform: none; }
+      .floating-label { left: 1rem; }
+      .pain { min-height: auto; }
+      .pain-title { min-height: 400px; }
+      .dictionary-head, .method-nav { position: static; }
+      .domain-groups { grid-template-columns: 1fr 1fr; }
+      .compare-row { grid-template-columns: 1fr .55fr 1fr; }
+      .compare-row > :last-child { display: none; }
+      .tabs { grid-template-columns: repeat(3, 1fr); }
+      .tab { text-align: center; }
+      .decision-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      body { font-size: 15px; }
+      .corner-mark { display: none; }
+      .pain-title, .pain-copy { padding: 42px 24px; }
+      .domain-groups { grid-template-columns: 1fr; }
+      .domain-group { min-height: auto; }
+      .domain-advice { grid-template-columns: 1fr; }
+      .compare-head { display: block; }
+      .compare-head .tiny-note { display: block; margin-top: 1rem; }
+      .compare-row { grid-template-columns: 1fr .55fr; }
+      .compare-row > :nth-child(3) { display: none; }
+      .tabs { grid-template-columns: 1fr; }
+      .method-panel { min-height: 0; }
+      .method-top { display: block; }
+      .method-top .method-id { margin-top: 1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .domain-ticker { animation: none; }
+      .tab { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+  <div class="corner-mark"><b>WAIWAI</b><span>小白上网指南</span></div>
+
+  <main>
+    <section class="shell hero" id="top">
+      <div class="hero-copy reveal">
+        <span class="eyebrow">Beginner friendly · 01</span>
+        <h1>如何把自己的 <span class="marker">HTML</span><br>发布到互联网上</h1>
+        <p class="lead">AI 让做网页越来越容易。但真正让别人点开它，还差最后一步：把本地文件变成一个公开网址。</p>
+        <div class="hero-meta">
+          <span class="pill">零代码也能做</span><span class="pill">3 种发布方式</span><span class="pill">从概念讲起</span>
+        </div>
+      </div>
+      <div class="browser-wrap reveal d2" aria-label="网页从本地文件变成公开网站的示意图">
+        <div class="orbit" aria-hidden="true"></div>
+        <div class="browser">
+          <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="address">https://your-site.com</span></div>
+          <div class="browser-page"><small class="code">index.html → WORLD WIDE WEB</small><strong>你的作品，<br>全世界都能打开。</strong><span class="browser-button">已成功上线 ↗</span></div>
+        </div>
+        <span class="floating-label">local → online ✓</span>
+      </div>
+    </section>
+
+    <section class="pain" aria-labelledby="pain-title">
+      <div class="pain-title">
+        <div><span class="eyebrow">The gap</span><h2 id="pain-title">网页做完了，<br>为什么别人打不开？</h2></div>
+        <span class="giant">?</span>
+      </div>
+      <div class="pain-copy">
+        <div class="pain-item reveal"><span class="pain-icon">1</span><div><h3>HTML 的生产成本正在降低</h3><p>汇报、报告、作品集、简历，都可以从静态文档变成更生动的网页。</p></div></div>
+        <div class="pain-item reveal d1"><span class="pain-icon">2</span><div><h3>但本地文件只住在你的电脑里</h3><p>把文件路径发给朋友，对方的设备上没有这份文件，自然无法打开。</p></div></div>
+        <div class="pain-item reveal d2"><span class="pain-icon">3</span><div><h3>缺的不是代码，是一个“公开出口”</h3><p>你需要把文件放到互联网上，并得到一个任何人都能访问的网址。</p></div></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="concept-title">
+      <div class="shell dictionary">
+        <div class="dictionary-head reveal"><span class="eyebrow">Two words first</span><h2 id="concept-title">先搞懂两个<br>基本概念</h2><span class="tiny-note">不用背术语，理解就好 :)</span></div>
+        <div class="term-stack">
+          <article class="term reveal"><span class="term-no">01</span><span class="en">Deployment</span><h3>部署</h3><p>把电脑里的 HTML、CSS、JS 和图片，放到一台能被互联网访问的服务器上。做完这一步，你的网站才算真正“开张”。</p><span class="analogy">📦 类比：把作品从书桌搬进临街店铺</span></article>
+          <article class="term reveal d1"><span class="term-no">02</span><span class="en">Domain</span><h3>域名</h3><p>网站的地址，也可以理解为互联网上的“门牌号”。别人输入它，就能准确找到你的网站。</p><span class="analogy">📍 类比：让朋友找到店铺的导航地址</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section domains" aria-labelledby="domain-title">
+      <div class="shell domains-head reveal"><div><span class="eyebrow">Top-level domain</span><h2 id="domain-title">域名后缀，<br>其实有很多选择</h2></div><p class="lead">同一个网站可以拥有不同后缀。它们主要区别在品牌观感、价格、注册规则和熟悉程度，<b class="marker">不是功能强弱</b>。</p></div>
+      <div class="domain-ticker" aria-hidden="true"><span>mywebsite.com</span><span>mywebsite.ai</span><span>mywebsite.site</span><span>mywebsite.xyz</span><span>mywebsite.io</span><span>mywebsite.cn</span><span>mywebsite.com</span><span>mywebsite.ai</span><span>mywebsite.site</span><span>mywebsite.xyz</span><span>mywebsite.io</span><span>mywebsite.cn</span></div>
+      <div class="shell domain-groups">
+        <article class="domain-group reveal"><span class="index">01</span><h3>通用型</h3><div class="tag-row"><span class="tag">.com</span><span class="tag">.net</span><span class="tag">.org</span><span class="tag">.info</span></div></article>
+        <article class="domain-group reveal d1"><span class="index">02</span><h3>科技 / 互联网</h3><div class="tag-row"><span class="tag">.io</span><span class="tag">.ai</span><span class="tag">.app</span><span class="tag">.dev</span><span class="tag">.tech</span><span class="tag">.cloud</span></div></article>
+        <article class="domain-group reveal d2"><span class="index">03</span><h3>网站 / 品牌</h3><div class="tag-row"><span class="tag">.site</span><span class="tag">.website</span><span class="tag">.online</span><span class="tag">.store</span><span class="tag">.shop</span><span class="tag">.blog</span></div></article>
+        <article class="domain-group reveal"><span class="index">04</span><h3>个人 / 创作者</h3><div class="tag-row"><span class="tag">.me</span><span class="tag">.pro</span><span class="tag">.design</span><span class="tag">.studio</span></div></article>
+        <article class="domain-group reveal d1"><span class="index">05</span><h3>国家 / 地区</h3><div class="tag-row"><span class="tag">.cn</span><span class="tag">.us</span><span class="tag">.uk</span><span class="tag">.jp</span><span class="tag">.sg</span><span class="tag">.de</span></div></article>
+        <article class="domain-group reveal d2"><span class="index">06</span><h3>特色后缀</h3><div class="tag-row"><span class="tag">.xyz</span><span class="tag">.one</span><span class="tag">.live</span><span class="tag">.world</span><span class="tag">.space</span></div></article>
+      </div>
+      <div class="shell domain-advice reveal"><span class="rank">.com &gt; .ai &gt; .io<br>&gt; .site / .xyz</span><p><b>给 AI 产品或个人网站的实用排序：</b> .com 最容易获得普通用户信任；.ai 适合 AI 项目但通常更贵；.io 更像科技创业公司；.site 和 .xyz 便宜好注册，但品牌感相对弱。</p></div>
+    </section>
+
+    <section class="section" aria-labelledby="compare-title">
+      <div class="shell">
+        <div class="compare-head reveal"><div><span class="eyebrow">3 ways to publish</span><h2 id="compare-title">三种上线方式，<br>先看怎么选</h2></div><span class="tiny-note">怕麻烦，就从 Netlify 开始</span></div>
+        <div class="compare-grid reveal" role="table" aria-label="三种网站部署方法对比">
+          <div class="compare-row header" role="row"><span role="columnheader">方法</span><span role="columnheader">难度</span><span role="columnheader">适合谁</span><span role="columnheader">网址示例</span></div>
+          <div class="compare-row" role="row"><strong role="cell">Netlify 拖拽上传 <em class="recommend">最推荐</em></strong><span class="stars" role="cell">★</span><span role="cell">第一次发布、追求最快</span><span class="code" role="cell">xxxx.netlify.app</span></div>
+          <div class="compare-row" role="row"><strong role="cell">GitHub Pages</strong><span class="stars" role="cell">★★</span><span role="cell">长期维护、习惯 GitHub</span><span class="code" role="cell">用户名.github.io/项目</span></div>
+          <div class="compare-row" role="row"><strong role="cell">Vercel</strong><span class="stars" role="cell">★★</span><span role="cell">以后会做更多网站</span><span class="code" role="cell">xxxx.vercel.app</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section methods" aria-labelledby="methods-title">
+      <div class="shell method-layout">
+        <div class="method-nav reveal"><span class="eyebrow">Do it step by step</span><h2 id="methods-title">跟着做，<br>一次就上线</h2><div class="tabs" role="tablist" aria-label="选择部署方式"><button class="tab" role="tab" aria-selected="true" aria-controls="netlify" id="tab-netlify">01 Netlify</button><button class="tab" role="tab" aria-selected="false" aria-controls="github" id="tab-github">02 GitHub</button><button class="tab" role="tab" aria-selected="false" aria-controls="vercel" id="tab-vercel">03 Vercel</button></div></div>
+        <div>
+          <article class="method-panel active" id="netlify" role="tabpanel" aria-labelledby="tab-netlify">
+            <div class="method-top"><div><h3>Netlify 拖拽上传</h3><a class="url-link" href="https://app.netlify.com/" target="_blank" rel="noopener">app.netlify.com ↗</a></div><span class="method-id">01</span></div>
+            <div class="steps"><div class="step"><p><b>打开 Netlify</b><br>注册或登录账号，进入项目页面。</p></div><div class="step"><p><b>把整个项目文件夹拖进去</b><br>不要只拖一张图片；首页通常需要命名为 <span class="code">index.html</span>。</p></div><div class="step"><p><b>等待生成公开网址</b><br>部署完成后，复制 <span class="code">netlify.app</span> 地址发给朋友。</p></div></div>
+            <div class="benefit"><b>好处：</b>操作最简单，速度最快，几乎没有代码门槛。</div><div class="example-url">示例：waiwai-learn-obsidian.netlify.app</div>
+          </article>
+          <article class="method-panel" id="github" role="tabpanel" aria-labelledby="tab-github" hidden>
+            <div class="method-top"><div><h3>GitHub Pages</h3><a class="url-link" href="https://github.com/" target="_blank" rel="noopener">github.com ↗</a></div><span class="method-id">02</span></div>
+            <div class="steps"><div class="step"><p><b>新建 Repository</b><br>在 GitHub 右上角点击 “+”，创建一个仓库。</p></div><div class="step"><p><b>上传网页文件</b><br>把 HTML、CSS、JS 和图片完整放进仓库。</p></div><div class="step"><p><b>开启 Pages</b><br>进入 <span class="code">Settings → Pages</span>，选择从 <span class="code">main</span> 分支发布。</p></div><div class="step"><p><b>得到公开地址</b><br>通常格式为 <span class="code">USERNAME.github.io/REPOSITORY</span>。</p></div></div>
+            <div class="benefit"><b>好处：</b>本地改完代码再 push，网站就能持续更新，很适合长期维护。</div><div class="example-url">示例：zhuhaihuijoy-butter.github.io/learnobsidian/0808/</div>
+          </article>
+          <article class="method-panel" id="vercel" role="tabpanel" aria-labelledby="tab-vercel" hidden>
+            <div class="method-top"><div><h3>Vercel</h3><a class="url-link" href="https://vercel.com/" target="_blank" rel="noopener">vercel.com ↗</a></div><span class="method-id">03</span></div>
+            <div class="steps"><div class="step"><p><b>选择最顺手的入口</b><br>可以直接导入项目，也可以连接 GitHub 仓库。</p></div><div class="step"><p><b>确认项目设置</b><br>静态 HTML 通常无需复杂配置，按默认选项继续即可。</p></div><div class="step"><p><b>点击 Deploy</b><br>等待部署完成，拿到 <span class="code">vercel.app</span> 公开网址。</p></div><div class="step"><p><b>进阶时再用 CLI</b><br>以后也可以安装 Vercel CLI，让 Agent 帮你完成部署操作。</p></div></div>
+            <div class="benefit"><b>好处：</b>既能连接 GitHub 自动更新，也适合管理多个网站并查看项目数据。</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section decision" aria-labelledby="decision-title">
+      <div class="shell"><span class="eyebrow">Quick decision</span><h2 id="decision-title">别纠结工具。<br>按你现在的需求选。</h2><div class="decision-grid">
+        <article class="choice best reveal"><span class="when">今天就想发出去</span><h3>选 Netlify</h3><p>把文件夹拖进去，拿链接。先完成第一次发布最重要。</p></article>
+        <article class="choice reveal d1"><span class="when">准备持续更新</span><h3>选 GitHub Pages</h3><p>代码和网站放在一起，修改记录清楚，push 后自动更新。</p></article>
+        <article class="choice reveal d2"><span class="when">以后要做更多网站</span><h3>选 Vercel</h3><p>和 GitHub 配合顺手，也方便管理多个前端项目。</p></article>
+      </div></div>
+    </section>
+
+    <section class="section finale" aria-labelledby="final-title">
+      <div class="shell finale-inner reveal"><span class="eyebrow">Your site is ready</span><h2 id="final-title">从“我电脑里”，<br>到“全世界都能看”。</h2><p>部署没有想象中复杂。选一个方法，把第一个 HTML 发出去；域名、自定义配置和自动更新，都可以等上线之后再慢慢学。</p><button class="cta" id="backTop" type="button">从第一步再看一遍 ↑</button></div>
+    </section>
+  </main>
+
+  <footer><div class="shell"><span>© 2026 Waiwai · 小白友好的 AI 实操讲解</span><span>Based on esthersjw/esther-design-system · CC BY-NC-SA 4.0</span></div></footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+    }), { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+    const progressBar = document.getElementById('progressBar');
+    const updateProgress = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = `${max > 0 ? (window.scrollY / max) * 100 : 0}%`;
+    };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((item) => item.setAttribute('aria-selected', 'false'));
+      panels.forEach((panel) => { panel.classList.remove('active'); panel.hidden = true; });
+      tab.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(tab.getAttribute('aria-controls'));
+      panel.hidden = false; panel.classList.add('active');
+    }));
+    document.getElementById('backTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  </script>
+  <!-- Built with waiwai-design-system; derivative retains attribution under CC BY-NC-SA 4.0 -->
+</body>
+</html>
